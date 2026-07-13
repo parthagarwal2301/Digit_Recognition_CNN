@@ -1,21 +1,108 @@
+%%writefile cnn_app.py
+
 import streamlit as st
 import numpy as np
 import tensorflow as tf
 from PIL import Image, ImageOps
 
+
 st.title("Digit Recognition using CNN (MNIST)")
-st.write("Upload an image of a digit (28x28 grayscale)")
-model = tf.keras.models.load_model("mnist_cnn.h5")
-uploaded_file = st.file_uploader("Choose an image...", type="jpg")
+
+st.write(
+    "Upload an image of a handwritten digit"
+)
+
+
+# Load Model
+
+@st.cache_resource
+def load_model():
+
+    model = tf.keras.models.load_model(
+        "mnist_cnn.h5"
+    )
+
+    return model
+
+
+model = load_model()
+
+
+
+# Upload Image
+
+uploaded_file = st.file_uploader(
+    "Choose an image...",
+    type=["jpg","jpeg","png"]
+)
 
 
 
 if uploaded_file is not None:
-    image = Image.open(uploaded_file).convert('L')  # Convert to grayscale
-    image = ImageOps.invert(image)  # Invert to match MNIST format
-    image = image.resize((28, 28))
-    img_array = np.array(image).reshape(-1, 28, 28, 1) / 255.0
-    st.image(image, caption="Uploaded Image", width=150)
 
-prediction = model.predict(img_array)
-st.success(f"Predicted Digit: {np.argmax(prediction)}")
+    # Read Image
+
+    image = Image.open(
+        uploaded_file
+    ).convert("L")
+
+
+    # Convert to MNIST style
+
+    image = ImageOps.invert(image)
+
+    image = image.resize(
+        (28,28)
+    )
+
+
+    # Display image
+
+    st.image(
+        image,
+        caption="Uploaded Digit",
+        width=150
+    )
+
+
+    # Preprocess
+
+    img_array = np.array(image)
+
+    img_array = img_array.reshape(
+        1,
+        28,
+        28,
+        1
+    )
+
+    img_array = img_array / 255.0
+
+
+
+    # Prediction
+
+    prediction = model.predict(
+        img_array
+    )
+
+
+    digit = np.argmax(
+        prediction
+    )
+
+
+    confidence = np.max(
+        prediction
+    ) * 100
+
+
+
+    st.success(
+        f"Predicted Digit: {digit}"
+    )
+
+
+    st.info(
+        f"Confidence: {confidence:.2f}%"
+    )
